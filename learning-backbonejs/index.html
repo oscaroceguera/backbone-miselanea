@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+
+		<form id="addPerson" action="">
+			<input type="text" placeholder="Name of the person">
+			<input type="submit" value="Add Person">
+		</form>
+
+		<script id="personTemplate" type="text/template">
+			<span>
+				<strong><%= name %></strong> (<%= age %>) - <%= occupation %>
+			</span>
+			<button class="edit">Edit</button>
+			<button class="delete">Delete</button>
+		</script>
+
+		<script src="lib/underscore-min.js"></script>
+		<script src="lib/jquery-2.1.4.min.js"></script>
+		<script src="lib/backbone-min.js"></script>
+		<script src="js/main-04.js"></script>
+	</body>
+</html>
