@@ -1,4 +1,5 @@
 (function(){
+	$( "#releaseDate" ).datepicker();
 	var books = [{title:"JS the good parts", author:"John Doe", releaseDate:"2012", keywords:"JavaScript Programming"},
         {title:"CS the better parts", author:"John Doe", releaseDate:"2012", keywords:"CoffeeScript Programming"},
         {title:"Scala for the impatient", author:"John Doe", releaseDate:"2012", keywords:"Scala Programming"},
@@ -12,20 +13,23 @@
 		   author:"Know",
 		   releaseDate:"Know",
 		   keywords:"None"
+	   },
+	   parse: function(response){
+		   console.log(response);
+		   response.id = response._id
+		   return response
 	   }
 	})
 
 	var Library = Backbone.Collection.extend({
-		model: Book
+		model: Book,
+		url: '/api/books'
 	})
 
 	var BookView = Backbone.View.extend({
 		tagName: 'div',
 		className: 'bookContainer',
 		template: _.template($('#bookTemplate').html()),
-		initialize: function(){
-			this.render()
-		},
 		render: function(){
 			var output = this.template(this.model.toJSON())
 			this.$el.html(output)
@@ -33,12 +37,21 @@
 		},
 
 		events: {
-				'click .delete': 'deleteBook'
+
+			'click .delete': 'deleteBook'
 		},
 
 		deleteBook: function(){
+			console.log('Destroying book _id: ' + this.model.get("_id"));
 			// Delete model
-			this.model.destroy
+			this.model.destroy({
+				error:function (model, response) {
+                    console.log("Failed destroying book");
+                },
+                success:function (model, response) {
+                    console.log("Succeeded in destroying book");
+                }
+			})
 			// Delete view
 			this.remove()
 		}
@@ -48,18 +61,25 @@
 		el: $('#books'),
 
 		initialize: function(){
-			this.collection = new Library(books)
+			//this.collection = new Library(books)
+			this.collection = new Library()
+			this.collection.fetch({
+                error:function () {
+                    console.log(arguments);
+                }
+            })
 			this.render()
 
 			this.collection.on('add', this.renderBook, this)
 			this.collection.on('remove', this.removeBook, this)
+			this.collection.on("reset", this.render, this);
 		},
 
 		render: function(){
 			var that = this;
 			_.each(this.collection.models, function(item){
 				that.renderBook(item)
-			}, this)
+			})
 		},
 
 		renderBook: function(item){
@@ -78,15 +98,29 @@
 			e.preventDefault()
 			var formData = {};
 
-			$('#addBook').children("input").each(function(i, el){
+			$('#addBook div').children("input").each(function(i, el){
 				if($(el).val() !== ""){
-					formData[el.id] = $(el).val();
+					if (el.id === 'keywords') {
+					    var keywordArray = $(el).val().split(',');
+					    var keywordObjects = [];
+
+						for (var j = 0; j < keywordArray.length; j++) {
+					        keywordObjects[j] = {"keyword":keywordArray[j]};
+					    }
+
+					    formData[el.id] = keywordObjects;
+
+					} else if (el.id === 'releaseDate'){
+					    formData[el.id] = $('#releaseDate').datepicker("getDate").getTime();
+					} else {
+					    formData[el.id] = $(el).val();
+					}
 				}
 
 			})
 
 			books.push(formData)
-			this.collection.add(new Book(formData))
+			this.collection.create(formData)
 		},
 
 		removeBook: function(removedBook){
