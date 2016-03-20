@@ -8,10 +8,10 @@
 	var Book = Backbone.Model.extend({
 		defaults:{
 		   coverImage:"img/placeholder.png",
-		   title:"Some title",
-		   author:"John Doe",
-		   releaseDate:"2012",
-		   keywords:"JavaScript Programming"
+		   title:"No title",
+		   author:"Know",
+		   releaseDate:"Know",
+		   keywords:"None"
 	   }
 	})
 
@@ -30,6 +30,17 @@
 			var output = this.template(this.model.toJSON())
 			this.$el.html(output)
 			return this
+		},
+
+		events: {
+				'click .delete': 'deleteBook'
+		},
+
+		deleteBook: function(){
+			// Delete model
+			this.model.destroy
+			// Delete view
+			this.remove()
 		}
 	})
 
@@ -39,6 +50,9 @@
 		initialize: function(){
 			this.collection = new Library(books)
 			this.render()
+
+			this.collection.on('add', this.renderBook, this)
+			this.collection.on('remove', this.removeBook, this)
 		},
 
 		render: function(){
@@ -54,6 +68,42 @@
 			})
 
 			this.$el.append(bookView.render().el)
+		},
+
+		events : {
+			'click #add' : "addBook"
+		},
+
+		addBook: function(e){
+			e.preventDefault()
+			var formData = {};
+
+			$('#addBook').children("input").each(function(i, el){
+				if($(el).val() !== ""){
+					formData[el.id] = $(el).val();
+				}
+
+			})
+
+			books.push(formData)
+			this.collection.add(new Book(formData))
+		},
+
+		removeBook: function(removedBook){
+			console.log(removedBook);
+			var removedBookData = removedBook.attributes
+
+			_.each(removedBookData, function(val, key){
+		    	if(removedBookData[key] === removedBook.defaults[key]){
+		    		delete removedBookData[key];
+		    	}
+		    });
+
+		    _.each(books, function(book){
+		        if(_.isEqual(book, removedBookData)){
+		            books.splice(_.indexOf(books, book), 1);
+		        }
+		    });
 		}
 	})
 
